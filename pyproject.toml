@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "orangekame3", email = "miya.org.0309@gmail.com" }
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     "mcp[cli]>=1.12.4",
     "openai>=1.99.4",
@@ -16,6 +16,9 @@ dependencies = [
 
 [project.scripts]
 gpt-mcp = "src.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [build-system]
 requires = ["hatchling"]

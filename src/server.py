@@ -2,13 +2,10 @@
 """OpenAI MCP Server - Bridge OpenAI models to Claude via MCP."""
 
 import os
-import asyncio
-from typing import List, Optional, Literal
+from typing import Optional
 from dotenv import load_dotenv
 from openai import OpenAI
-from pydantic import BaseModel, Field
-from mcp.server import Server
-from mcp.server.types import TextContent  # type: ignore
+from mcp.server.fastmcp import FastMCP
 
 load_dotenv()
 
@@ -22,27 +19,19 @@ config = {
     "model": os.getenv("OPENAI_MODEL", "gpt-4o"),
 }
 
-# Initialize OpenAI client with retry and timeout configuration
-client = OpenAI(
-    api_key=config["api_key"],  # type: ignore
-    max_retries=config["max_retries"],  # type: ignore
-    timeout=config["timeout"],  # type: ignore
-)
+# OpenAI client will be initialized in main() after config validation
+client = None
 
 # Create MCP server instance
-mcp_server = Server("gpt-mcp")
+mcp_server = FastMCP("gpt-mcp")
 
 
-class ModelListArgs(BaseModel):
-    pass
-
-
-@mcp_server.tool()  # type: ignore
-async def list_models(_arguments: ModelListArgs) -> List[TextContent]:
-    """
-    List available OpenAI models.
-    Returns a list of available OpenAI models.
-    """
+@mcp_server.tool()
+def list_models() -> str:
+    """List available OpenAI models."""
+    if client is None:
+        return "Error: OpenAI client not initialized"
+    
     try:
         models = client.models.list()
 
@@ -69,50 +58,30 @@ async def list_models(_arguments: ModelListArgs) -> List[TextContent]:
             result += "\n".join(f"- {m}" for m in sorted(completion_models))
             result += "\n\n"
 
-        return [TextContent(
-            type="text",
-            text=result
-        )]
+        return result
 
     except Exception as e:
-        return [TextContent(
-            type="text",
-            text=f"Error listing models: {str(e)}"
-        )]
+        return f"Error listing models: {str(e)}"
 
 
-class AdvancedSearchArgs(BaseModel):
-    prompt: str = Field(
-        description="Ask questions, search for information, or consult about complex problems"
-    )
-    model: str = Field(
-        default_factory=lambda: str(config["model"]),
-        description="The OpenAI model to use (e.g., o3, gpt-4o, gpt-4o-mini)"
-    )
-    search_context_size: Optional[Literal["low", "medium", "high"]] = Field(
-        default=None,
-        description="Controls the search context size (defaults to environment setting)"
-    )
-    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
-        default=None,
-        description="Controls the reasoning effort level (defaults to environment setting)"
-    )
-    enable_web_search: bool = Field(
-        default=True,
-        description="Whether to enable web search capabilities"
-    )
-
-
-@mcp_server.tool()  # type: ignore
-async def advanced_search(arguments: AdvancedSearchArgs) -> List[TextContent]:
-    """
-    Advanced AI search with web capabilities and reasoning.
-
+@mcp_server.tool()
+def advanced_search(
+    prompt: str,
+    model: str = "gpt-4o",
+    search_context_size: Optional[str] = None,
+    reasoning_effort: Optional[str] = None,
+    enable_web_search: bool = True
+) -> str:
+    """Advanced AI search with web capabilities and reasoning.
+    
     This tool provides intelligent web search and reasoning capabilities,
     similar to o3's search but available for multiple OpenAI models.
     Useful for finding the latest information, troubleshooting errors,
     and discussing complex ideas or design challenges.
     """
+    if client is None:
+        return "Error: OpenAI client not initialized"
+        
     try:
         # Prepare the message with search context
         messages = [
@@ -124,38 +93,39 @@ async def advanced_search(arguments: AdvancedSearchArgs) -> List[TextContent]:
                     "When relevant, cite sources and explain your reasoning process."
                 )
             },
-            {"role": "user", "content": arguments.prompt}
+            {"role": "user", "content": prompt}
         ]
 
         # Use provided settings or fall back to environment settings
-        search_context = arguments.search_context_size or str(config["search_context_size"])
-        reasoning = arguments.reasoning_effort or config["reasoning_effort"]
+        search_context = search_context_size or str(config["search_context_size"])
+        reasoning = reasoning_effort or config["reasoning_effort"]
 
         # Prepare additional parameters based on model capabilities
         extra_params = {}
 
         # For o3 model, use the responses API with web search
-        if arguments.model == "o3":
+        if model == "o3":
             # o3 specific implementation
-            response = await asyncio.to_thread(
-                client.responses.create,  # type: ignore
-                model=arguments.model,
-                input=arguments.prompt,
-                tools=[
-                    {
-                        "type": "web_search_preview",
-                        "search_context_size": search_context,
-                    }
-                ] if arguments.enable_web_search else [],
-                tool_choice="auto",
-                parallel_tool_calls=True,
-                reasoning={"effort": reasoning},
-            )
-
-            content = getattr(response, 'output_text', None) or "No response text available."
+            try:
+                response = client.responses.create(  # type: ignore
+                    model=model,
+                    input=prompt,
+                    tools=[
+                        {
+                            "type": "web_search_preview",
+                            "search_context_size": search_context,
+                        }
+                    ] if enable_web_search else [],
+                    tool_choice="auto",
+                    parallel_tool_calls=True,
+                    reasoning={"effort": reasoning},
+                )
+                content = getattr(response, 'output_text', None) or "No response text available."
+            except Exception as e:
+                return f"Error with o3 model: {str(e)}"
         else:
             # For other models, simulate web search through prompting
-            if arguments.enable_web_search:
+            if enable_web_search:
                 messages[0]["content"] += (
                     " When answering, consider that you should provide up-to-date information "
                     "as if you had access to current web search results. Be clear about what "
@@ -173,34 +143,36 @@ async def advanced_search(arguments: AdvancedSearchArgs) -> List[TextContent]:
                 extra_params["temperature"] = 0.7
                 extra_params["top_p"] = 0.95
 
-            response = await asyncio.to_thread(
-                client.chat.completions.create,  # type: ignore
-                model=arguments.model,
+            response = client.chat.completions.create(
+                model=model,
                 messages=messages,  # type: ignore
                 **extra_params
             )
 
             content = getattr(response.choices[0].message, 'content', None) or "No response available."
 
-        return [TextContent(
-            type="text",
-            text=content
-        )]
+        return content
 
     except Exception as e:
-        return [TextContent(
-            type="text",
-            text=f"Error in advanced search: {str(e)}"
-        )]
+        return f"Error in advanced search: {str(e)}"
 
 
-async def main():
+def main():
     """Run the MCP server."""
+    global client
+    
     # Check for API key
     if not config["api_key"]:
         print("Error: OPENAI_API_KEY environment variable is not set")
         print("Please set it in your .env file or environment")
         return
+
+    # Initialize OpenAI client with retry and timeout configuration
+    client = OpenAI(
+        api_key=config["api_key"],  # type: ignore
+        max_retries=config["max_retries"],  # type: ignore
+        timeout=config["timeout"],  # type: ignore
+    )
 
     # Print configuration on startup
     print("GPT MCP Server starting with configuration:")
@@ -209,9 +181,9 @@ async def main():
     print(f"  Search context size: {config['search_context_size']}")
     print(f"  Reasoning effort: {config['reasoning_effort']}")
 
-    async with mcp_server.run() as streams:
-        await streams.start()
+    # Run the server
+    mcp_server.run()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
