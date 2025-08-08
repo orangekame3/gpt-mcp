@@ -2,7 +2,11 @@
   "mcpServers": {
     "gpt": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/orangekame3/gpt-mcp.git", "gpt-mcp"],
+      "args": [
+        "--from",
+        "git+https://github.com/orangekame3/gpt-mcp.git",
+        "gpt-mcp"
+      ],
       "env": {
         "OPENAI_API_KEY": "${OPENAI_API_KEY}",
         "OPENAI_MODEL": "gpt-5",
