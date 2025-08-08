@@ -16,7 +16,7 @@ config = {
     "timeout": float(os.getenv("OPENAI_API_TIMEOUT", "60")),
     "search_context_size": os.getenv("SEARCH_CONTEXT_SIZE", "medium"),
     "reasoning_effort": os.getenv("REASONING_EFFORT", "medium"),
-    "model": os.getenv("OPENAI_MODEL", "gpt-4o"),
+    "model": os.getenv("OPENAI_MODEL", "gpt-5"),
 }
 
 # OpenAI client will be initialized in main() after config validation
@@ -67,7 +67,7 @@ def list_models() -> str:
 @mcp_server.tool()
 def advanced_search(
     prompt: str,
-    model: str = "gpt-4o",
+    model: Optional[str] = None,
     search_context_size: Optional[str] = None,
     reasoning_effort: Optional[str] = None,
     enable_web_search: bool = True
@@ -81,6 +81,9 @@ def advanced_search(
     """
     if client is None:
         return "Error: OpenAI client not initialized"
+    
+    # Use provided model or fall back to environment/config default
+    selected_model = model or config["model"]
         
     try:
         # Prepare the message with search context
@@ -104,11 +107,11 @@ def advanced_search(
         extra_params = {}
 
         # For o3 model, use the responses API with web search
-        if model == "o3":
+        if selected_model == "o3":
             # o3 specific implementation
             try:
                 response = client.responses.create(  # type: ignore
-                    model=model,
+                    model=selected_model,
                     input=prompt,
                     tools=[
                         {
@@ -138,7 +141,7 @@ def advanced_search(
                 "-search-preview", "gpt-5", "gpt-4.1", "-audio-preview", 
                 "-realtime-preview", "-transcribe", "-tts", "gpt-image-1"
             ]
-            if not any(unsupported in model for unsupported in unsupported_models):
+            if not any(unsupported in selected_model for unsupported in unsupported_models):
                 # Adjust parameters based on reasoning effort
                 if reasoning == "high":
                     extra_params["temperature"] = 0.3
@@ -151,7 +154,7 @@ def advanced_search(
                     extra_params["top_p"] = 0.95
 
             response = client.chat.completions.create(
-                model=model,
+                model=selected_model,
                 messages=messages,  # type: ignore
                 **extra_params
             )
@@ -159,7 +162,7 @@ def advanced_search(
             content = getattr(response.choices[0].message, 'content', None) or "No response available."
 
         # Add model information to the response
-        result = f"**Model Used:** {model}\n\n{content}"
+        result = f"**Model Used:** {selected_model}\n\n{content}"
         return result
 
     except Exception as e:
