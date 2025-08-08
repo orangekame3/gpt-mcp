@@ -132,16 +132,23 @@ def advanced_search(
                     "information might need verification with actual current sources."
                 )
 
-            # Adjust parameters based on reasoning effort
-            if reasoning == "high":
-                extra_params["temperature"] = 0.3
-                extra_params["top_p"] = 0.9
-            elif reasoning == "low":
-                extra_params["temperature"] = 0.9
-                extra_params["top_p"] = 1.0
-            else:  # medium
-                extra_params["temperature"] = 0.7
-                extra_params["top_p"] = 0.95
+            # Only add temperature/top_p for models that support them
+            # Skip temperature/top_p for certain models that don't support them
+            unsupported_models = [
+                "-search-preview", "gpt-5", "gpt-4.1", "-audio-preview", 
+                "-realtime-preview", "-transcribe", "-tts", "gpt-image-1"
+            ]
+            if not any(unsupported in model for unsupported in unsupported_models):
+                # Adjust parameters based on reasoning effort
+                if reasoning == "high":
+                    extra_params["temperature"] = 0.3
+                    extra_params["top_p"] = 0.9
+                elif reasoning == "low":
+                    extra_params["temperature"] = 0.9
+                    extra_params["top_p"] = 1.0
+                else:  # medium
+                    extra_params["temperature"] = 0.7
+                    extra_params["top_p"] = 0.95
 
             response = client.chat.completions.create(
                 model=model,
@@ -151,7 +158,9 @@ def advanced_search(
 
             content = getattr(response.choices[0].message, 'content', None) or "No response available."
 
-        return content
+        # Add model information to the response
+        result = f"**Model Used:** {model}\n\n{content}"
+        return result
 
     except Exception as e:
         return f"Error in advanced search: {str(e)}"
