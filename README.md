@@ -2,7 +2,8 @@
 
 An MCP (Model Context Protocol) server that provides access to OpenAI's models through Claude.
 
-> **Note**: This project is strongly inspired by [yoshiko-pg/o3-search-mcp](https://github.com/yoshiko-pg/o3-search-mcp). While o3-search-mcp focuses on the o3 model, this server extends the concept to support all OpenAI models with similar web search capabilities.
+> [!NOTE]:
+> This project is strongly inspired by [yoshiko-pg/o3-search-mcp](https://github.com/yoshiko-pg/o3-search-mcp). While o3-search-mcp focuses on the o3 model, this server extends the concept to support all OpenAI models with similar web search capabilities.
 
 ## Features
 
@@ -104,14 +105,14 @@ List all available OpenAI models, categorized by type (chat models and completio
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `OPENAI_API_KEY` | Yes | - | Your OpenAI API key |
-| `OPENAI_MODEL` | No | `gpt-5` | Default model to use for advanced_search |
-| `SEARCH_CONTEXT_SIZE` | No | `medium` | Search context depth (low/medium/high) |
-| `REASONING_EFFORT` | No | `medium` | Reasoning intensity (low/medium/high) |
-| `OPENAI_API_TIMEOUT` | No | `60` | API timeout in seconds |
-| `OPENAI_MAX_RETRIES` | No | `3` | Max retry attempts for failed requests |
+| Variable              | Required | Default  | Description                              |
+| --------------------- | -------- | -------- | ---------------------------------------- |
+| `OPENAI_API_KEY`      | Yes      | -        | Your OpenAI API key                      |
+| `OPENAI_MODEL`        | No       | `gpt-5`  | Default model to use for advanced_search |
+| `SEARCH_CONTEXT_SIZE` | No       | `medium` | Search context depth (low/medium/high)   |
+| `REASONING_EFFORT`    | No       | `medium` | Reasoning intensity (low/medium/high)    |
+| `OPENAI_API_TIMEOUT`  | No       | `60`     | API timeout in seconds                   |
+| `OPENAI_MAX_RETRIES`  | No       | `3`      | Max retry attempts for failed requests   |
 
 ## Use Cases
 
