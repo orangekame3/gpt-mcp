@@ -28,7 +28,36 @@ uvx --from git+https://github.com/orangekame3/gpt-mcp.git gpt-mcp
 
 If you're using Claude Code, you can easily add this MCP server:
 
-#### Method 1: Using claude mcp add command with environment variables
+#### Method 1: Using .mcp.json file
+
+Create a `.mcp.json` file in your project root:
+
+```json
+{
+  "mcpServers": {
+    "gpt": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/orangekame3/gpt-mcp.git",
+        "gpt-mcp"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "your-api-key-here",
+        "OPENAI_MODEL": "gpt-5",
+        "SEARCH_CONTEXT_SIZE": "medium",
+        "REASONING_EFFORT": "medium",
+        "OPENAI_API_TIMEOUT": "60",
+        "OPENAI_MAX_RETRIES": "3"
+      }
+    }
+  }
+}
+```
+
+Replace `"your-api-key-here"` with your actual OpenAI API key. The MCP server will be automatically available in Claude Code.
+
+#### Method 2: Using claude mcp add command with environment variables
 
 ```bash
 # Add as 'gpt' - this allows you to call it with just 'gpt'
@@ -43,142 +72,13 @@ claude mcp add gpt \
     -- uvx --from git+https://github.com/orangekame3/gpt-mcp.git gpt-mcp
 ```
 
-#### Method 2: Using .env file with source
-
-If you have a `.env` file, you can source it first:
-
-```bash
-# Source your .env file
-source .env
-
-# Then add the MCP server using the environment variables
-claude mcp add gpt \
-    -s user \
-    -e OPENAI_API_KEY=$OPENAI_API_KEY \
-    -e SEARCH_CONTEXT_SIZE=$SEARCH_CONTEXT_SIZE \
-    -e REASONING_EFFORT=$REASONING_EFFORT \
-    -e OPENAI_API_TIMEOUT=$OPENAI_API_TIMEOUT \
-    -e OPENAI_MAX_RETRIES=$OPENAI_MAX_RETRIES \
-    -e OPENAI_MODEL=$OPENAI_MODEL \
-    -- uvx --from git+https://github.com/orangekame3/gpt-mcp.git gpt-mcp
-```
-
 After installation, you can use it directly in Claude Code:
 ```bash
-# Use advanced search
-> Use advanced_search to find the latest React best practices
+# Ask gpt for advanced search
+> Ask gpt to find the latest React best practices
 
 # List available models
-> Use list_models to show available OpenAI models
-```
-
-### Option 3: Clone and Install
-
-```bash
-# Clone the repository
-git clone https://github.com/orangekame3/gpt-mcp.git
-cd gpt-mcp
-
-# Install with uv
-uv sync
-
-# Or install with pip
-pip install -e .
-```
-
-## Configuration
-
-### Setting up OpenAI API Key
-
-1. Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
-
-2. For local development, create `.env` file:
-```bash
-cp .env.example .env
-# Edit .env and add your API key
-```
-
-### Using with Claude Code settings.json
-
-For Claude Code users, you can also configure environment variables using `settings.json`:
-
-```bash
-# Copy the example settings file
-cp settings.json.example settings.json
-# Edit settings.json and add your API key
-```
-
-This file will be used by Claude Code to set environment variables for your session. Note that `settings.json` is gitignored to protect your credentials.
-
-### Claude Desktop Configuration
-
-Claude Desktop uses a `claude_desktop_config.json` file for MCP server configuration.
-
-**Location:**
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-- Linux: `~/.config/Claude/claude_desktop_config.json`
-
-#### Using uvx (Recommended)
-
-```json
-{
-  "mcpServers": {
-    "gpt": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/orangekame3/gpt-mcp.git", "gpt-mcp"],
-      "env": {
-        "OPENAI_API_KEY": "your-api-key-here",
-        "OPENAI_MODEL": "gpt-5",
-        "SEARCH_CONTEXT_SIZE": "medium",
-        "REASONING_EFFORT": "medium",
-        "OPENAI_API_TIMEOUT": "60",
-        "OPENAI_MAX_RETRIES": "3"
-      }
-    }
-  }
-}
-```
-
-#### Using local installation with uv
-
-```json
-{
-  "mcpServers": {
-    "gpt": {
-      "command": "uv",
-      "args": ["--directory", "/path/to/gpt-mcp", "run", "gpt-mcp"],
-      "env": {
-        "OPENAI_API_KEY": "your-api-key-here",
-        "OPENAI_MODEL": "gpt-5",
-        "SEARCH_CONTEXT_SIZE": "medium",
-        "REASONING_EFFORT": "medium",
-        "OPENAI_API_TIMEOUT": "60",
-        "OPENAI_MAX_RETRIES": "3"
-      }
-    }
-  }
-}
-```
-
-#### Using pip installation
-
-```json
-{
-  "mcpServers": {
-    "gpt": {
-      "command": "gpt-mcp",
-      "env": {
-        "OPENAI_API_KEY": "your-api-key-here",
-        "OPENAI_MODEL": "gpt-5",
-        "SEARCH_CONTEXT_SIZE": "medium",
-        "REASONING_EFFORT": "medium",
-        "OPENAI_API_TIMEOUT": "60",
-        "OPENAI_MAX_RETRIES": "3"
-      }
-    }
-  }
-}
+> Ask gpt to list available OpenAI models
 ```
 
 ## Available Tools
@@ -217,22 +117,22 @@ List all available OpenAI models, categorized by type (chat models and completio
 
 ### 🐛 Debugging Complex Issues
 ```
-> I'm getting a "WebSocket connection failed" error. Use advanced_search to find solutions.
+> I'm getting a "WebSocket connection failed" error. Ask gpt to find solutions.
 ```
 
 ### 📚 Research with Latest Information
 ```
-> Use advanced_search to find the latest best practices for React Server Components in 2025.
+> Ask gpt to find the latest best practices for React Server Components in 2025.
 ```
 
 ### 🧩 Design and Architecture Discussions
 ```
-> I want to design a real-time collaborative editor. Use advanced_search with high reasoning effort to explore architectures.
+> I want to design a real-time collaborative editor. Ask gpt with high reasoning effort to explore architectures.
 ```
 
 ### 🔍 Comparing Technologies
 ```
-> Use advanced_search to compare Rust vs Go for building high-performance web servers in 2025.
+> Ask gpt to compare Rust vs Go for building high-performance web servers in 2025.
 ```
 
 ## Development
