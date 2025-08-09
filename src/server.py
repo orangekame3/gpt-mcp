@@ -14,7 +14,6 @@ config = {
     "api_key": os.getenv("OPENAI_API_KEY"),
     "max_retries": int(os.getenv("OPENAI_MAX_RETRIES", "3")),
     "timeout": float(os.getenv("OPENAI_API_TIMEOUT", "60")),
-    "search_context_size": os.getenv("SEARCH_CONTEXT_SIZE", "medium"),
     "reasoning_effort": os.getenv("REASONING_EFFORT", "medium"),
     "model": os.getenv("OPENAI_MODEL", "gpt-5"),
 }
@@ -28,47 +27,29 @@ mcp_server = FastMCP("gpt-mcp")
 
 @mcp_server.tool()
 def list_models() -> str:
-    """List available OpenAI models."""
+    """List available OpenAI models (filtered to supported models only)."""
     if client is None:
         return "Error: OpenAI client not initialized"
     
-    try:
-        models = client.models.list()
-
-        # Filter and organize models
-        chat_models = []
-        completion_models = []
-
-        for model in models.data:
-            if "gpt" in model.id:
-                if "instruct" in model.id:
-                    completion_models.append(model.id)
-                else:
-                    chat_models.append(model.id)
-
-        result = "Available OpenAI Models:\n\n"
-
-        if chat_models:
-            result += "Chat Models:\n"
-            result += "\n".join(f"- {m}" for m in sorted(chat_models))
-            result += "\n\n"
-
-        if completion_models:
-            result += "Completion Models:\n"
-            result += "\n".join(f"- {m}" for m in sorted(completion_models))
-            result += "\n\n"
-
-        return result
-
-    except Exception as e:
-        return f"Error listing models: {str(e)}"
+    # Supported models only
+    supported_models = [
+        "o3",
+        "gpt-4o-search-preview", 
+        "gpt-5"
+    ]
+    
+    result = "Available OpenAI Models (Supported by this server):\n\n"
+    result += "Chat Models with Web Search:\n"
+    result += "\n".join(f"- {m}" for m in supported_models)
+    result += "\n\n"
+    
+    return result
 
 
 @mcp_server.tool()
 def advanced_search(
     prompt: str,
     model: Optional[str] = None,
-    search_context_size: Optional[str] = None,
     reasoning_effort: Optional[str] = None,
     enable_web_search: bool = True
 ) -> str:
@@ -78,88 +59,41 @@ def advanced_search(
     similar to o3's search but available for multiple OpenAI models.
     Useful for finding the latest information, troubleshooting errors,
     and discussing complex ideas or design challenges.
+    
+    Supported models: o3, gpt-4o-search-preview, gpt-5
     """
     if client is None:
         return "Error: OpenAI client not initialized"
     
+    # Supported models only
+    supported_models = ["o3", "gpt-4o-search-preview", "gpt-5"]
+    
     # Use provided model or fall back to environment/config default
     selected_model = model or config["model"]
+    
+    # Validate model is supported
+    if selected_model not in supported_models:
+        return f"Error: Model '{selected_model}' is not supported. Supported models: {', '.join(supported_models)}"
+    
+    reasoning = reasoning_effort or config["reasoning_effort"]
         
     try:
-        # Prepare the message with search context
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are an AI assistant with advanced web search and reasoning capabilities. "
-                    "Provide comprehensive, well-researched answers based on the latest information available. "
-                    "When relevant, cite sources and explain your reasoning process."
-                )
-            },
-            {"role": "user", "content": prompt}
-        ]
-
-        # Use provided settings or fall back to environment settings
-        search_context = search_context_size or str(config["search_context_size"])
-        reasoning = reasoning_effort or config["reasoning_effort"]
-
-        # Prepare additional parameters based on model capabilities
-        extra_params = {}
-
-        # For o3 model, use the responses API with web search
-        if selected_model == "o3":
-            # o3 specific implementation
-            try:
-                response = client.responses.create(  # type: ignore
-                    model=selected_model,
-                    input=prompt,
-                    tools=[
-                        {
-                            "type": "web_search_preview",
-                            "search_context_size": search_context,
-                        }
-                    ] if enable_web_search else [],
-                    tool_choice="auto",
-                    parallel_tool_calls=True,
-                    reasoning={"effort": reasoning},
-                )
-                content = getattr(response, 'output_text', None) or "No response text available."
-            except Exception as e:
-                return f"Error with o3 model: {str(e)}"
-        else:
-            # For other models, simulate web search through prompting
-            if enable_web_search:
-                messages[0]["content"] += (
-                    " When answering, consider that you should provide up-to-date information "
-                    "as if you had access to current web search results. Be clear about what "
-                    "information might need verification with actual current sources."
-                )
-
-            # Only add temperature/top_p for models that support them
-            # Skip temperature/top_p for certain models that don't support them
-            unsupported_models = [
-                "-search-preview", "gpt-5", "gpt-4.1", "-audio-preview", 
-                "-realtime-preview", "-transcribe", "-tts", "gpt-image-1"
-            ]
-            if not any(unsupported in selected_model for unsupported in unsupported_models):
-                # Adjust parameters based on reasoning effort
-                if reasoning == "high":
-                    extra_params["temperature"] = 0.3
-                    extra_params["top_p"] = 0.9
-                elif reasoning == "low":
-                    extra_params["temperature"] = 0.9
-                    extra_params["top_p"] = 1.0
-                else:  # medium
-                    extra_params["temperature"] = 0.7
-                    extra_params["top_p"] = 0.95
-
-            response = client.chat.completions.create(
-                model=selected_model,
-                messages=messages,  # type: ignore
-                **extra_params
-            )
-
-            content = getattr(response.choices[0].message, 'content', None) or "No response available."
+        # Build parameters for responses.create
+        params = {
+            "model": selected_model,
+            "input": prompt,
+        }
+        
+        # Add web search tools if enabled
+        if enable_web_search:
+            params["tools"] = [{"type": "web_search_preview"}]
+        
+        # Add reasoning for o3 family models
+        if selected_model.startswith("o3"):
+            params["reasoning"] = {"effort": reasoning}
+        
+        response = client.responses.create(**params)  # type: ignore
+        content = getattr(response, 'output_text', None) or "No response text available."
 
         # Add model information to the response
         result = f"**Model Used:** {selected_model}\n\n{content}"
@@ -190,8 +124,8 @@ def main():
     print("GPT MCP Server starting with configuration:")
     print(f"  Max retries: {config['max_retries']}")
     print(f"  Timeout: {config['timeout']}s")
-    print(f"  Search context size: {config['search_context_size']}")
     print(f"  Reasoning effort: {config['reasoning_effort']}")
+    print("  Supported models: o3, gpt-4o-search-preview, gpt-5")
 
     # Run the server
     mcp_server.run()
