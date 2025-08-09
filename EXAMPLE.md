@@ -36,8 +36,10 @@ https://qfes.academist-cf.com/
 
 ```
 > 最新のqiskitでジョブをsubmitする方法を最もシンプルな実装でcode blockでmarkdownで出力してください
+```
 
 GPT-5 Response:
+
 ```python
 # 最小構成：Qiskit Runtime (Sampler V2) でジョブを submit する例
 # 事前準備：
@@ -75,6 +77,7 @@ print("Submitted Job ID:", job.job_id())
 ```
 
 o3 Response:
+
 ```python
 # 最新の Qiskit（SDK 2.x 系列）で、IBM Quantum のバックエンドへ
 # "とりあえず 1 ジョブ投げて結果を取る"だけの最小コード例
@@ -107,5 +110,4 @@ job = backend.run(qc, shots=1024)              # ← ここが "submit"
 result = job.result()
 print("Job ID :", job.job_id())
 print("Counts :", result.get_counts())
-```
 ```
