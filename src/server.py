@@ -34,7 +34,6 @@ def list_models() -> str:
     # Supported models only
     supported_models = [
         "o3",
-        "gpt-4o-search-preview", 
         "gpt-5"
     ]
     
@@ -60,13 +59,13 @@ def advanced_search(
     Useful for finding the latest information, troubleshooting errors,
     and discussing complex ideas or design challenges.
     
-    Supported models: o3, gpt-4o-search-preview, gpt-5
+    Supported models: o3, gpt-5
     """
     if client is None:
         return "Error: OpenAI client not initialized"
     
     # Supported models only
-    supported_models = ["o3", "gpt-4o-search-preview", "gpt-5"]
+    supported_models = ["o3", "gpt-5"]
     
     # Use provided model or fall back to environment/config default
     selected_model = model or config["model"]
@@ -125,7 +124,7 @@ def main():
     print(f"  Max retries: {config['max_retries']}")
     print(f"  Timeout: {config['timeout']}s")
     print(f"  Reasoning effort: {config['reasoning_effort']}")
-    print("  Supported models: o3, gpt-4o-search-preview, gpt-5")
+    print("  Supported models: o3, gpt-5")
 
     # Run the server
     mcp_server.run()
