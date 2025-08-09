@@ -2,7 +2,7 @@
 
 An MCP (Model Context Protocol) server that provides access to OpenAI's models through Claude.
 
-> [!NOTE]:
+> [!NOTE]
 > This project is strongly inspired by [yoshiko-pg/o3-search-mcp](https://github.com/yoshiko-pg/o3-search-mcp). While o3-search-mcp focuses on the o3 model, this server extends the concept to support all OpenAI models with similar web search capabilities.
 
 ## Features
