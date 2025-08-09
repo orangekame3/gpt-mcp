@@ -31,3 +31,81 @@ https://jointquantum2025.jp/
 ### o3
 
 https://qfes.academist-cf.com/
+
+## 💻 Technical Implementation Queries
+
+```
+> 最新のqiskitでジョブをsubmitする方法を最もシンプルな実装でcode blockでmarkdownで出力してください
+
+GPT-5 Response:
+```python
+# 最小構成：Qiskit Runtime (Sampler V2) でジョブを submit する例
+# 事前準備：
+# - pip install "qiskit>=1.0" qiskit-ibm-runtime
+# - IBM Quantum の API トークンを保存するか、環境変数 QISKIT_IBM_TOKEN を設定しておく
+
+from qiskit import QuantumCircuit
+from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
+from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
+
+# 1) サンプル回路（ベル状態）
+qc = QuantumCircuit(2)
+qc.h(0)
+qc.cx(0, 1)
+qc.measure_all()
+
+# 2) サービスとバックエンドを取得
+service = QiskitRuntimeService()  # 保存済みの資格情報を使用
+backend = service.least_busy(operational=True, simulator=False)
+
+# 3) バックエンドに合わせて変換（ISA回路化）
+pm = generate_preset_pass_manager(backend=backend, optimization_level=1)
+isa_qc = pm.run(qc)
+
+# 4) ジョブを submit
+sampler = Sampler(mode=backend)
+job = sampler.run([isa_qc])
+
+print("Submitted Job ID:", job.job_id())
+
+# （任意）結果を取得
+# result = job.result()
+# counts = result[0].data.meas.get_counts()
+# print(counts)
+```
+
+o3 Response:
+```python
+# 最新の Qiskit（SDK 2.x 系列）で、IBM Quantum のバックエンドへ
+# "とりあえず 1 ジョブ投げて結果を取る"だけの最小コード例
+# --------------------------------------------------------------
+# 事前準備:
+#   1) pip install qiskit qiskit-ibm-provider
+#   2) IBMProvider.save_account(token="YOUR_API_TOKEN")  を一度だけ実行
+#      あるいは環境変数  QISKIT_IBM_TOKEN  にトークンを設定しておく
+# --------------------------------------------------------------
+
+from qiskit import QuantumCircuit
+from qiskit_ibm_provider import IBMProvider
+
+# プロバイダー (IBM Quantum アカウント) をロード
+provider = IBMProvider()                       # ← トークンは自動読み込み
+
+# 実行先バックエンドを取得（ここではシミュレーター）
+backend = provider.get_backend("ibm_qasm_simulator")
+
+# 適当な回路（ベル状態を測定）
+qc = QuantumCircuit(2, 2)
+qc.h(0)
+qc.cx(0, 1)
+qc.measure_all()
+
+# ジョブをサブミット
+job = backend.run(qc, shots=1024)              # ← ここが "submit"
+
+# 結果を取得して表示
+result = job.result()
+print("Job ID :", job.job_id())
+print("Counts :", result.get_counts())
+```
+```
