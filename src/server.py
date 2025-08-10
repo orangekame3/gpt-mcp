@@ -14,7 +14,8 @@ config = {
     "api_key": os.getenv("OPENAI_API_KEY"),
     "max_retries": int(os.getenv("OPENAI_MAX_RETRIES", "3")),
     "timeout": float(os.getenv("OPENAI_API_TIMEOUT", "60")),
-    "reasoning_effort": os.getenv("REASONING_EFFORT", "medium"),
+    "reasoning_effort": os.getenv("REASONING_EFFORT", "minimal"),
+    "verbosity": os.getenv("VERBOSITY", "low"),
     "model": os.getenv("OPENAI_MODEL", "gpt-5"),
 }
 
@@ -50,6 +51,7 @@ def advanced_search(
     prompt: str,
     model: Optional[str] = None,
     reasoning_effort: Optional[str] = None,
+    verbosity: Optional[str] = None,
     enable_web_search: bool = True
 ) -> str:
     """Advanced AI search with web capabilities and reasoning.
@@ -58,6 +60,13 @@ def advanced_search(
     similar to o3's search but available for multiple OpenAI models.
     Useful for finding the latest information, troubleshooting errors,
     and discussing complex ideas or design challenges.
+    
+    Args:
+        prompt: The search query or prompt
+        model: Model to use (o3, gpt-5). Defaults to environment setting
+        reasoning_effort: Reasoning level (minimal, low, medium, high)
+        verbosity: Output detail level (low, medium, high) - GPT-5 only
+        enable_web_search: Enable web search capabilities
     
     Supported models: o3, gpt-5
     """
@@ -75,6 +84,7 @@ def advanced_search(
         return f"Error: Model '{selected_model}' is not supported. Supported models: {', '.join(supported_models)}"
     
     reasoning = reasoning_effort or config["reasoning_effort"]
+    selected_verbosity = verbosity or config["verbosity"]
         
     try:
         # Build parameters for responses.create
@@ -87,15 +97,19 @@ def advanced_search(
         if enable_web_search:
             params["tools"] = [{"type": "web_search_preview"}]
         
-        # Add reasoning for o3 family models
-        if selected_model.startswith("o3"):
+        # Add reasoning for o3 family models and gpt-5
+        if selected_model.startswith("o3") or selected_model == "gpt-5":
             params["reasoning"] = {"effort": reasoning}
+        
+        # Add verbosity control for GPT-5
+        if selected_model == "gpt-5":
+            params["text"] = {"verbosity": selected_verbosity}
         
         response = client.responses.create(**params)  # type: ignore
         content = getattr(response, 'output_text', None) or "No response text available."
 
         # Add model information to the response
-        result = f"**Model Used:** {selected_model}\n\n{content}"
+        result = f"**Model Used:** {selected_model}\n**Reasoning Effort:** {reasoning}\n**Verbosity:** {selected_verbosity}\n\n{content}"
         return result
 
     except Exception as e:
@@ -124,6 +138,7 @@ def main():
     print(f"  Max retries: {config['max_retries']}")
     print(f"  Timeout: {config['timeout']}s")
     print(f"  Reasoning effort: {config['reasoning_effort']}")
+    print(f"  Verbosity: {config['verbosity']}")
     print("  Supported models: o3, gpt-5")
 
     # Run the server
