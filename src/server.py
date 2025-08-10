@@ -15,7 +15,7 @@ config = {
     "max_retries": int(os.getenv("OPENAI_MAX_RETRIES", "3")),
     "timeout": float(os.getenv("OPENAI_API_TIMEOUT", "60")),
     "reasoning_effort": os.getenv("REASONING_EFFORT", "minimal"),
-    "verbosity": os.getenv("VERBOSITY", "low"),
+    "verbosity": os.getenv("VERBOSITY", "medium"),
     "model": os.getenv("OPENAI_MODEL", "gpt-5"),
 }
 

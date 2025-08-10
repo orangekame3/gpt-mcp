@@ -12,7 +12,7 @@
         "OPENAI_MODEL": "gpt-5",
         "OPENAI_MODEL": "gpt-5",
         "REASONING_EFFORT": "minimal",
-        "VERBOSITY": "low",
+        "VERBOSITY": "medium",
         "OPENAI_API_TIMEOUT": "60",
         "OPENAI_MAX_RETRIES": "3"
       }
