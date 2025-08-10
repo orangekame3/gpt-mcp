@@ -44,10 +44,10 @@ Create a `.mcp.json` file in your project root:
         "gpt-mcp"
       ],
       "env": {
-        "OPENAI_API_KEY": "your-api-key-here",
+        "OPENAI_API_KEY": "your-openai-api-key",
         "OPENAI_MODEL": "gpt-5",
-        "SEARCH_CONTEXT_SIZE": "medium",
-        "REASONING_EFFORT": "medium",
+        "REASONING_EFFORT": "minimal",
+        "VERBOSITY": "medium",
         "OPENAI_API_TIMEOUT": "60",
         "OPENAI_MAX_RETRIES": "3"
       }
@@ -56,7 +56,7 @@ Create a `.mcp.json` file in your project root:
 }
 ```
 
-Replace `"your-api-key-here"` with your actual OpenAI API key. The MCP server will be automatically available in Claude Code.
+Replace `"your-openai-api-key"` with your actual OpenAI API key. The MCP server will be automatically available in Claude Code.
 
 #### Method 2: Using claude mcp add command with environment variables
 
@@ -65,8 +65,8 @@ Replace `"your-api-key-here"` with your actual OpenAI API key. The MCP server wi
 claude mcp add gpt \
     -s user \
     -e OPENAI_API_KEY=your-api-key \
-    -e SEARCH_CONTEXT_SIZE=medium \
-    -e REASONING_EFFORT=medium \
+    -e REASONING_EFFORT=minimal \
+    -e VERBOSITY=medium \
     -e OPENAI_API_TIMEOUT=60 \
     -e OPENAI_MAX_RETRIES=3 \
     -e OPENAI_MODEL=gpt-5 \
@@ -96,8 +96,8 @@ This tool provides intelligent web search and reasoning capabilities, similar to
 Parameters:
 - `prompt`: Your question or search query
 - `model`: The model to use (default: uses environment variable OPENAI_MODEL or "gpt-5")
-- `search_context_size`: Control search depth - "low", "medium", "high" (optional)
-- `reasoning_effort`: Reasoning intensity - "low", "medium", "high" (optional)
+- `reasoning_effort`: Reasoning intensity - "minimal", "low", "medium", "high" (optional)
+- `verbosity`: Output detail level - "low", "medium", "high" (optional, GPT-5 only)
 - `enable_web_search`: Whether to enable web search (default: true)
 
 ### list_models
@@ -105,14 +105,14 @@ List all available OpenAI models, categorized by type (chat models and completio
 
 ## Environment Variables
 
-| Variable              | Required | Default  | Description                              |
-| --------------------- | -------- | -------- | ---------------------------------------- |
-| `OPENAI_API_KEY`      | Yes      | -        | Your OpenAI API key                      |
-| `OPENAI_MODEL`        | No       | `gpt-5`  | Default model to use for advanced_search |
-| `SEARCH_CONTEXT_SIZE` | No       | `medium` | Search context depth (low/medium/high)   |
-| `REASONING_EFFORT`    | No       | `medium` | Reasoning intensity (low/medium/high)    |
-| `OPENAI_API_TIMEOUT`  | No       | `60`     | API timeout in seconds                   |
-| `OPENAI_MAX_RETRIES`  | No       | `3`      | Max retry attempts for failed requests   |
+| Variable              | Required | Default   | Description                                    |
+| --------------------- | -------- | --------- | ---------------------------------------------- |
+| `OPENAI_API_KEY`      | Yes      | -         | Your OpenAI API key                            |
+| `OPENAI_MODEL`        | No       | `gpt-5`   | Default model to use for advanced_search       |
+| `REASONING_EFFORT`    | No       | `minimal` | Reasoning intensity (minimal/low/medium/high)  |
+| `VERBOSITY`           | No       | `medium`  | Output detail level (low/medium/high, GPT-5 only) |
+| `OPENAI_API_TIMEOUT`  | No       | `60`      | API timeout in seconds                         |
+| `OPENAI_MAX_RETRIES`  | No       | `3`       | Max retry attempts for failed requests         |
 
 ## Use Cases
 
